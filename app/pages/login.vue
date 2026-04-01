@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen flex items-center justify-center bg-gray-100">
     <div class="bg-white p-8 rounded-lg shadow-md w-96">
-      <h1 class="text-2xl font-bold mb-6 text-center">Broadcast Login</h1>
+      <h1 class="text-2xl font-bold mb-6 text-center">Logowanie - Broadcast</h1>
 
       <form @submit.prevent="handleLogin" class="space-y-4">
         <div>
@@ -16,7 +16,7 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Hasło</label>
           <input
             v-model="password"
             type="password"
@@ -35,7 +35,7 @@
           class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
           :disabled="loading"
         >
-          {{ loading ? 'Logging in...' : 'Login' }}
+          {{ loading ? 'Logowanie...' : 'Zaloguj' }}
         </button>
       </form>
     </div>
