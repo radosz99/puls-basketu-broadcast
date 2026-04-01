@@ -179,51 +179,52 @@
               Brak wydarzeń
             </div>
 
-            <div v-else class="divide-y divide-gray-200">
-              <div v-for="event in events" :key="event.triggered_at" class="p-4 hover:bg-gray-50">
-                <div class="flex items-start justify-between">
-                  <div class="flex-1">
-                    <div class="flex items-center gap-3 mb-2">
-                      <span
-                        class="px-2 py-1 rounded text-xs font-medium"
-                        :class="{
-                          'bg-green-100 text-green-800': event.action === 'show',
-                          'bg-red-100 text-red-800': event.action === 'hide',
-                          'bg-blue-100 text-blue-800': event.action === 'update'
-                        }"
-                      >
-                        {{ event.action.toUpperCase() }}
-                      </span>
-                      <span class="text-sm font-medium">{{ event.graphic || 'N/A' }}</span>
-                      <span
-                        class="px-2 py-1 rounded text-xs"
-                        :class="event.output_was_online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'"
-                      >
-                        {{ event.output_was_online ? 'Output Online' : 'Output Offline' }}
-                      </span>
-                    </div>
-
-                    <div class="text-xs text-gray-600 space-y-1">
-                      <div class="flex items-center gap-4">
-                        <span>{{ formatDateTime(event.triggered_at) }}</span>
-                        <span v-if="event.geo_data">
-                          {{ event.geo_data.city_name || 'Unknown' }}, {{ event.geo_data.country_code || 'N/A' }}
-                          ({{ event.geo_data.ip_address }})
-                        </span>
-                        <span>User ID: {{ event.triggered_by_user_id }}</span>
-                      </div>
-
-                      <div v-if="event.payload && Object.keys(event.payload).length > 0" class="mt-2">
-                        <details class="text-xs">
-                          <summary class="cursor-pointer text-blue-600 hover:text-blue-800">Payload</summary>
-                          <pre class="mt-1 p-2 bg-gray-100 rounded text-xs overflow-x-auto">{{ JSON.stringify(event.payload, null, 2) }}</pre>
-                        </details>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <table v-else class="w-full text-xs">
+              <thead class="bg-gray-50 border-b">
+                <tr>
+                  <th class="px-3 py-2 text-left font-medium text-gray-700">Time</th>
+                  <th class="px-3 py-2 text-left font-medium text-gray-700">Action</th>
+                  <th class="px-3 py-2 text-left font-medium text-gray-700">Graphic</th>
+                  <th class="px-3 py-2 text-left font-medium text-gray-700">Payload</th>
+                  <th class="px-3 py-2 text-left font-medium text-gray-700">Location</th>
+                  <th class="px-3 py-2 text-left font-medium text-gray-700">User</th>
+                  <th class="px-3 py-2 text-left font-medium text-gray-700">Output</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-200">
+                <tr v-for="event in events" :key="event.triggered_at" class="hover:bg-gray-50">
+                  <td class="px-3 py-2 text-gray-600">{{ formatDateTime(event.triggered_at) }}</td>
+                  <td class="px-3 py-2">
+                    <span class="font-medium" :class="{
+                      'text-blue-600': event.action === 'show',
+                      'text-red-600': event.action === 'hide',
+                      'text-gray-600': event.action === 'update'
+                    }">
+                      {{ event.action }}
+                    </span>
+                  </td>
+                  <td class="px-3 py-2 text-gray-600">{{ event.graphic || '-' }}</td>
+                  <td class="px-3 py-2 text-gray-600 font-mono">
+                    <span v-if="event.payload && Object.keys(event.payload).length > 0">
+                      {{ formatPayload(event.payload) }}
+                    </span>
+                    <span v-else>-</span>
+                  </td>
+                  <td class="px-3 py-2 text-gray-600">
+                    <span v-if="event.geo_data">
+                      {{ event.geo_data.city_name || 'Unknown' }}, {{ event.geo_data.country_code || 'N/A' }}
+                    </span>
+                    <span v-else>-</span>
+                  </td>
+                  <td class="px-3 py-2 text-gray-600">{{ event.triggered_by_user_id }}</td>
+                  <td class="px-3 py-2">
+                    <span :class="event.output_was_online ? 'text-blue-600' : 'text-gray-400'">
+                      {{ event.output_was_online ? 'online' : 'offline' }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
 
           <!-- Pagination -->
@@ -342,8 +343,8 @@ async function handleCreateChannel() {
     })
 
     // Show the generated key
-    if (response.broadcast_key) {
-      generatedKey.value = response.broadcast_key
+    if (response.key) {
+      generatedKey.value = response.key
       startKeyExpiryTimer()
     }
 
@@ -368,10 +369,10 @@ async function handleRegenerateKey(channel: any) {
   }
 
   try {
-    const response = await api.post(`/api/v1/broadcast/channels/${channel.channel_id}/regenerate-key`)
+    const response = await api.post(`/api/v1/broadcast/channels/${channel.id}/regenerate-key`)
 
-    if (response.broadcast_key) {
-      generatedKey.value = response.broadcast_key
+    if (response.key) {
+      generatedKey.value = response.key
       startKeyExpiryTimer()
 
       // Scroll to the key display
@@ -447,6 +448,14 @@ function formatDateTime(dateString: string) {
     minute: '2-digit',
     second: '2-digit'
   })
+}
+
+function formatPayload(payload: any) {
+  if (!payload) return '-'
+  const items = Object.entries(payload)
+    .map(([key, value]) => `${key}:${value}`)
+    .join(', ')
+  return items.length > 60 ? items.substring(0, 60) + '...' : items
 }
 
 onMounted(async () => {
