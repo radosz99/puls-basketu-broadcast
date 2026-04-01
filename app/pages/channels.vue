@@ -2,42 +2,42 @@
   <div class="min-h-screen bg-gray-100">
     <!-- Header -->
     <div class="bg-gray-800 text-white px-6 py-3 flex items-center justify-between">
-      <h1 class="text-xl font-bold">Channel Management</h1>
+      <h1 class="text-xl font-bold">Zarządzanie kanałami</h1>
       <button
         @click="handleLogout"
         class="text-sm hover:text-gray-300"
       >
-        Logout
+        Wyloguj
       </button>
     </div>
 
     <div v-if="loading" class="p-6 text-center">
-      Loading channels...
+      Ładowanie kanałów...
     </div>
 
     <div v-else class="p-6 max-w-6xl mx-auto">
       <!-- Create Channel Form -->
       <div class="bg-white rounded-lg shadow p-6 mb-6">
-        <h2 class="text-xl font-bold mb-4">Create New Channel</h2>
+        <h2 class="text-xl font-bold mb-4">Utwórz nowy kanał</h2>
         <form @submit.prevent="handleCreateChannel" class="space-y-4">
           <div class="flex gap-4">
             <div class="flex-1">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Channel ID (slug)</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">ID kanału (slug)</label>
               <input
                 v-model="newChannel.channelId"
                 type="text"
                 required
-                placeholder="e.g., test-channel"
+                placeholder="np. test-kanal"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div class="flex-1">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Operator Name</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Nazwa operatora</label>
               <input
                 v-model="newChannel.operatorName"
                 type="text"
                 required
-                placeholder="e.g., Test Channel"
+                placeholder="np. Testowy Kanał"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -52,18 +52,18 @@
             :disabled="creating"
             class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400"
           >
-            {{ creating ? 'Creating...' : 'Create Channel' }}
+            {{ creating ? 'Tworzenie...' : 'Utwórz kanał' }}
           </button>
         </form>
 
         <!-- Show generated key -->
         <div v-if="generatedKey" class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded">
-          <div class="font-bold text-yellow-800 mb-2">⚠️ Broadcast Key Generated</div>
+          <div class="font-bold text-yellow-800 mb-2">⚠️ Wygenerowano klucz transmisji</div>
           <div class="bg-white p-3 rounded border border-yellow-300 font-mono text-sm break-all mb-2">
             {{ generatedKey }}
           </div>
           <div class="text-sm text-yellow-700">
-            Copy this key now - it won't be shown again!
+            Skopiuj ten klucz teraz - nie zostanie pokazany ponownie!
           </div>
         </div>
       </div>
@@ -73,11 +73,11 @@
         <table class="w-full">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Channel ID</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Operator Name</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID kanału</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nazwa operatora</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Active</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aktywny</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Akcje</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200">
@@ -93,14 +93,14 @@
                 </span>
               </td>
               <td class="px-6 py-4 text-sm">
-                {{ channel.is_active ? 'Yes' : 'No' }}
+                {{ channel.is_active ? 'Tak' : 'Nie' }}
               </td>
               <td class="px-6 py-4 text-sm">
                 <button
                   @click="handleRegenerateKey(channel.id)"
                   class="text-blue-600 hover:text-blue-800 text-sm"
                 >
-                  Regenerate Key
+                  Wygeneruj nowy klucz
                 </button>
               </td>
             </tr>
@@ -108,7 +108,7 @@
         </table>
 
         <div v-if="channels.length === 0" class="p-6 text-center text-gray-500">
-          No channels found
+          Nie znaleziono kanałów
         </div>
       </div>
     </div>
@@ -175,14 +175,14 @@ async function handleCreateChannel() {
     // Reload channels
     await loadChannels()
   } catch (err: any) {
-    createError.value = err.message || 'Failed to create channel'
+    createError.value = err.message || 'Nie udało się utworzyć kanału'
   } finally {
     creating.value = false
   }
 }
 
 async function handleRegenerateKey(channelId: number) {
-  if (!confirm('Are you sure you want to regenerate the broadcast key? The old key will stop working.')) {
+  if (!confirm('Czy na pewno chcesz wygenerować nowy klucz transmisji? Stary klucz przestanie działać.')) {
     return
   }
 
@@ -191,10 +191,10 @@ async function handleRegenerateKey(channelId: number) {
 
     if (response.broadcast_key) {
       generatedKey.value = response.broadcast_key
-      alert('Key regenerated successfully. Copy it now!')
+      alert('Klucz wygenerowany pomyślnie. Skopiuj go teraz!')
     }
   } catch (err: any) {
-    alert('Failed to regenerate key: ' + err.message)
+    alert('Nie udało się wygenerować klucza: ' + err.message)
   }
 }
 

@@ -66,7 +66,7 @@ const handleLogin = async () => {
     await auth.login(email.value, password.value)
     router.push('/')
   } catch (err: any) {
-    error.value = err.message || 'Login failed'
+    error.value = err.message || 'Logowanie nie powiodło się'
   } finally {
     loading.value = false
   }

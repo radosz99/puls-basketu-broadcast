@@ -29,9 +29,9 @@
 
     <!-- Debug info (only in preview mode) -->
     <div v-if="isPreview" class="fixed top-4 right-4 bg-black bg-opacity-50 text-white p-2 text-xs rounded z-50">
-      <div>Preview Mode</div>
-      <div>WS: {{ isConnected ? 'Connected' : 'Disconnected' }}</div>
-      <div v-if="currentGraphic">Graphic: {{ currentGraphic }}</div>
+      <div>Tryb podglądu</div>
+      <div>WS: {{ isConnected ? 'Połączony' : 'Rozłączony' }}</div>
+      <div v-if="currentGraphic">Grafika: {{ currentGraphic }}</div>
     </div>
   </div>
 </template>

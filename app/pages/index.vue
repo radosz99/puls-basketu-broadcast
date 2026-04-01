@@ -543,7 +543,7 @@ const previewUrl = computed(() => {
 })
 
 const stageUrl = computed(() => {
-  if (!channelId.value || !broadcastKey.value) return 'Enter broadcast key above'
+  if (!channelId.value || !broadcastKey.value) return 'Wpisz klucz transmisji powyżej'
   return `${window.location.origin}/stage/${channelId.value}?key=${broadcastKey.value}`
 })
 
@@ -789,7 +789,7 @@ onMounted(async () => {
 
     // Check if user has broadcast role
     if (user.role !== 'broadcast') {
-      error.value = 'Access denied. You need a Broadcast role to access this panel.'
+      error.value = 'Brak dostępu. Potrzebujesz roli Broadcast aby uzyskać dostęp do tego panelu.'
       loading.value = false
       return
     }
@@ -830,7 +830,7 @@ onMounted(async () => {
 
     loading.value = false
   } catch (err: any) {
-    error.value = err.message || 'Failed to load panel'
+    error.value = err.message || 'Nie udało się załadować panelu'
     loading.value = false
   }
 })
