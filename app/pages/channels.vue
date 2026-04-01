@@ -58,12 +58,25 @@
 
         <!-- Show generated key -->
         <div v-if="generatedKey" class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded">
-          <div class="font-bold text-yellow-800 mb-2">⚠️ Wygenerowano klucz transmisji</div>
+          <div class="flex items-center justify-between mb-2">
+            <div class="font-bold text-yellow-800">⚠️ Wygenerowano klucz transmisji</div>
+            <div class="text-sm text-yellow-700 font-medium">
+              Ukryje się za {{ keyExpiresIn }}s
+            </div>
+          </div>
           <div class="bg-white p-3 rounded border border-yellow-300 font-mono text-sm break-all mb-2">
             {{ generatedKey }}
           </div>
-          <div class="text-sm text-yellow-700">
-            Skopiuj ten klucz teraz - nie zostanie pokazany ponownie!
+          <div class="flex items-center gap-2">
+            <button
+              @click="copyKeyToClipboard"
+              class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm"
+            >
+              📋 Kopiuj klucz
+            </button>
+            <div class="text-sm text-yellow-700">
+              Klucz ukryje się automatycznie po 60 sekundach
+            </div>
           </div>
         </div>
       </div>
@@ -125,11 +138,43 @@ const channels = ref<any[]>([])
 const creating = ref(false)
 const createError = ref('')
 const generatedKey = ref('')
+const keyExpiresIn = ref(0)
+let keyExpiryTimer: NodeJS.Timeout | null = null
 
 const newChannel = ref({
   channelId: '',
   operatorName: ''
 })
+
+function startKeyExpiryTimer() {
+  // Clear any existing timer
+  if (keyExpiryTimer) {
+    clearInterval(keyExpiryTimer)
+  }
+
+  keyExpiresIn.value = 60
+
+  // Countdown timer
+  keyExpiryTimer = setInterval(() => {
+    keyExpiresIn.value--
+
+    if (keyExpiresIn.value <= 0) {
+      generatedKey.value = ''
+      keyExpiresIn.value = 0
+      if (keyExpiryTimer) {
+        clearInterval(keyExpiryTimer)
+        keyExpiryTimer = null
+      }
+    }
+  }, 1000)
+}
+
+function copyKeyToClipboard() {
+  if (generatedKey.value) {
+    navigator.clipboard.writeText(generatedKey.value)
+    alert('Klucz skopiowany do schowka!')
+  }
+}
 
 async function loadChannels() {
   try {
