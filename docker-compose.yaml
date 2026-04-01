@@ -1,0 +1,15 @@
+services:
+  pb-broadcast:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: puls-basketu-broadcast
+    env_file:
+      - .env
+    restart: unless-stopped
+    networks:
+      - puls-basketu-network
+
+networks:
+  puls-basketu-network:
+    external: true
