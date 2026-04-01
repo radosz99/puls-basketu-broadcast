@@ -209,6 +209,7 @@ async function handleCreateChannel() {
     // Show the generated key
     if (response.broadcast_key) {
       generatedKey.value = response.broadcast_key
+      startKeyExpiryTimer()
     }
 
     // Reset form
@@ -236,7 +237,11 @@ async function handleRegenerateKey(channelId: number) {
 
     if (response.broadcast_key) {
       generatedKey.value = response.broadcast_key
-      alert('Klucz wygenerowany pomyślnie. Skopiuj go teraz!')
+      startKeyExpiryTimer()
+
+      // Scroll to the key display
+      await nextTick()
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     }
   } catch (err: any) {
     alert('Nie udało się wygenerować klucza: ' + err.message)
@@ -269,6 +274,13 @@ onMounted(async () => {
   } catch (err: any) {
     console.error('Failed to load:', err)
     router.push('/login')
+  }
+})
+
+onUnmounted(() => {
+  if (keyExpiryTimer) {
+    clearInterval(keyExpiryTimer)
+    keyExpiryTimer = null
   }
 })
 </script>
