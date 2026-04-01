@@ -110,7 +110,7 @@
               </td>
               <td class="px-6 py-4 text-sm space-x-3">
                 <button
-                  @click="handleRegenerateKey(channel.id)"
+                  @click="handleRegenerateKey(channel)"
                   class="text-blue-600 hover:text-blue-800 text-sm"
                 >
                   Wygeneruj nowy klucz
@@ -119,7 +119,7 @@
                   @click="handleShowEvents(channel)"
                   class="text-green-600 hover:text-green-800 text-sm"
                 >
-                  📊 Wydarzenia
+                  Wydarzenia
                 </button>
               </td>
             </tr>
@@ -205,12 +205,12 @@
 
                     <div class="text-xs text-gray-600 space-y-1">
                       <div class="flex items-center gap-4">
-                        <span>🕐 {{ formatDateTime(event.triggered_at) }}</span>
+                        <span>{{ formatDateTime(event.triggered_at) }}</span>
                         <span v-if="event.geo_data">
-                          🌍 {{ event.geo_data.city_name || 'Unknown' }}, {{ event.geo_data.country_code || 'N/A' }}
+                          {{ event.geo_data.city_name || 'Unknown' }}, {{ event.geo_data.country_code || 'N/A' }}
                           ({{ event.geo_data.ip_address }})
                         </span>
-                        <span>👤 User ID: {{ event.triggered_by_user_id }}</span>
+                        <span>User ID: {{ event.triggered_by_user_id }}</span>
                       </div>
 
                       <div v-if="event.payload && Object.keys(event.payload).length > 0" class="mt-2">
@@ -362,13 +362,13 @@ async function handleCreateChannel() {
   }
 }
 
-async function handleRegenerateKey(channelId: number) {
+async function handleRegenerateKey(channel: any) {
   if (!confirm('Czy na pewno chcesz wygenerować nowy klucz transmisji? Stary klucz przestanie działać.')) {
     return
   }
 
   try {
-    const response = await api.post(`/api/v1/broadcast/channels/${channelId}/regenerate-key`)
+    const response = await api.post(`/api/v1/broadcast/channels/${channel.channel_id}/regenerate-key`)
 
     if (response.broadcast_key) {
       generatedKey.value = response.broadcast_key
