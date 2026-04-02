@@ -1,5 +1,8 @@
 <template>
-  <div class="fixed inset-0 bg-transparent">
+  <div class="fixed inset-0" :class="isPreview ? 'preview-mode' : 'bg-transparent'">
+    <!-- Preview Background -->
+    <div v-if="isPreview && showBackground" class="preview-background"></div>
+
     <!-- Team shotchart infographic -->
     <InfographicShotchart
       v-if="currentGraphic === 'team-shotchart' && graphicData"
@@ -10,6 +13,9 @@
       :title="graphicData.title || 'Mapa rzutów w całym meczu'"
       :speed="graphicData.speed"
       :show-advertising="graphicData.show_advertising || false"
+      :is-preview="isPreview"
+      :show-background="showBackground"
+      :overlay-opacity="graphicData.overlay_opacity || 0.7"
       @ready="handleGraphicReady"
     />
 
@@ -24,14 +30,29 @@
       :title="graphicData.title || 'Mapa rzutów w całym meczu'"
       :speed="graphicData.speed"
       :show-advertising="graphicData.show_advertising || false"
+      :is-preview="isPreview"
+      :show-background="showBackground"
+      :overlay-opacity="graphicData.overlay_opacity || 0.7"
+      @ready="handleGraphicReady"
+    />
+
+    <!-- Table horizontal infographic -->
+    <InfographicTableHorizontal
+      v-if="currentGraphic === 'table-horizontal' && graphicData"
+      ref="tableRef"
+      :league="graphicData.league"
+      :speed="graphicData.speed"
       @ready="handleGraphicReady"
     />
 
     <!-- Debug info (only in preview mode) -->
     <div v-if="isPreview" class="fixed top-4 right-4 bg-black bg-opacity-50 text-white p-2 text-xs rounded z-50">
-      <div>Tryb podglądu</div>
+      <div>Tryb podglądu ✓</div>
       <div>WS: {{ isConnected ? 'Połączony' : 'Rozłączony' }}</div>
       <div v-if="currentGraphic">Grafika: {{ currentGraphic }}</div>
+      <div :class="showBackground ? 'text-green-400' : 'text-gray-400'">
+        Tło: {{ showBackground ? 'preview_bg.png' : 'wyłączone' }}
+      </div>
     </div>
   </div>
 </template>
@@ -41,8 +62,10 @@ const route = useRoute()
 const channelId = route.params.channel_id as string
 const broadcastKey = route.query.key as string
 const isPreview = route.query.preview === 'true'
+const showBackground = route.query.showbg === 'true'
 
 const shotchartRef = ref<any>(null)
+const tableRef = ref<any>(null)
 const currentGraphic = ref<string | null>(null)
 const graphicData = ref<any>(null)
 
@@ -117,6 +140,8 @@ function showGraphic(command: any) {
   nextTick(() => {
     if ((graphic === 'team-shotchart' || graphic === 'player-shotchart') && shotchartRef.value) {
       shotchartRef.value.show()
+    } else if (graphic === 'table-horizontal' && tableRef.value) {
+      tableRef.value.show()
     }
   })
 }
@@ -126,6 +151,8 @@ function handleHide() {
 
   if ((graphic === 'team-shotchart' || graphic === 'player-shotchart') && shotchartRef.value) {
     shotchartRef.value.hide()
+  } else if (graphic === 'table-horizontal' && tableRef.value) {
+    tableRef.value.hide()
   }
 
   // Wait for animation, then clear
@@ -164,5 +191,41 @@ onMounted(() => {
 
   // Connect WebSocket
   connect()
+
+  // Listen for preview commands from parent (control panel)
+  if (isPreview) {
+    window.addEventListener('message', (event) => {
+      if (event.data.type === 'preview_command' && event.data.command) {
+        console.log('[Stage] Received preview command:', event.data.command)
+        handleCommand(event.data.command)
+      }
+    })
+  }
 })
 </script>
+
+<style scoped>
+.preview-mode {
+  background-color: transparent;
+}
+
+.preview-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 1920px;
+  height: 1080px;
+  background-image: url('/preview_bg.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Ensure infographics are above the background */
+:deep(.infographic-root) {
+  position: relative;
+  z-index: 10;
+}
+</style>

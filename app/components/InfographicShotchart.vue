@@ -31,6 +31,18 @@ const props = defineProps({
   showAdvertising: {
     type: Boolean,
     default: false
+  },
+  isPreview: {
+    type: Boolean,
+    default: false
+  },
+  showBackground: {
+    type: Boolean,
+    default: false
+  },
+  overlayOpacity: {
+    type: Number,
+    default: 0.7
   }
 })
 
@@ -258,10 +270,13 @@ defineExpose({
 
 <template>
     <Transition name="fade">
-        <div v-if="isVisible" class="infographic-root" data-infographic-root="1">
+        <div v-if="isVisible" class="infographic-root" :class="{ 'preview-mode': isPreview && !showBackground }" data-infographic-root="1">
 
             <!-- Dark Background Overlay -->
-            <div class="dark-overlay"></div>
+            <div
+              class="dark-overlay"
+              :style="{ backgroundColor: `rgba(0, 0, 0, ${overlayOpacity})` }"
+            ></div>
 
             <template v-if="(mode === 'team' && selectedTeam) || (mode === 'player' && selectedPlayer)">
 
@@ -359,6 +374,10 @@ defineExpose({
     overflow: hidden;
 }
 
+.infographic-root.preview-mode {
+    background-color: transparent;
+}
+
 /* Dark Background Overlay */
 .dark-overlay {
     position: absolute;
@@ -366,9 +385,9 @@ defineExpose({
     left: 0;
     width: 1920px;
     height: 1080px;
-    background-color: rgba(0, 0, 0, 0.9);
     z-index: 0;
     pointer-events: none;
+    /* Background color is set dynamically via :style prop */
 }
 
 /* Title Section */

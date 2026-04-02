@@ -185,6 +185,13 @@
               >
                 Mapa rzutów zawodnika
               </button>
+              <button
+                @click="selectedGraphic = 'table-horizontal'"
+                class="px-4 py-2 rounded border text-sm"
+                :class="selectedGraphic === 'table-horizontal' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
+              >
+                Tabela ligowa
+              </button>
             </div>
           </div>
 
@@ -351,6 +358,23 @@
                 />
               </div>
 
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  Przezroczystość tła: {{ (overlayOpacity * 100).toFixed(0) }}%
+                </label>
+                <input
+                  v-model.number="overlayOpacity"
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  class="w-full"
+                />
+                <div class="text-xs text-gray-500 mt-1">
+                  0% = całkowicie przezroczyste, 100% = całkowicie ciemne
+                </div>
+              </div>
+
               <div class="flex items-center">
                 <input
                   id="advertising"
@@ -366,21 +390,35 @@
           </div>
 
           <!-- Action Buttons -->
-          <div class="flex gap-4 pt-4">
-            <button
-              @click="handleShow"
-              :disabled="!canShow || isBusy"
-              class="flex-1 bg-green-600 text-white py-3 rounded-lg font-bold text-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-            >
-              POKAŻ
-            </button>
-            <button
-              @click="handleHide"
-              :disabled="isBusy"
-              class="flex-1 bg-red-600 text-white py-3 rounded-lg font-bold text-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-            >
-              UKRYJ
-            </button>
+          <div class="pt-4 space-y-3">
+            <!-- Preview Button -->
+            <div class="flex gap-4">
+              <button
+                @click="handlePreview"
+                :disabled="!canShow || isBusy"
+                class="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                PODGLĄD
+              </button>
+            </div>
+
+            <!-- Main Action Buttons -->
+            <div class="flex gap-4">
+              <button
+                @click="handleShow"
+                :disabled="!canShow || isBusy"
+                class="flex-1 bg-green-600 text-white py-3 rounded-lg font-bold text-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                POKAŻ NA ŻYWO
+              </button>
+              <button
+                @click="handleHide"
+                :disabled="isBusy"
+                class="flex-1 bg-red-600 text-white py-3 rounded-lg font-bold text-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                UKRYJ
+              </button>
+            </div>
           </div>
 
           <!-- Clear All Button -->
@@ -401,6 +439,7 @@
         <div ref="previewContainerRef" class="bg-gray-900 rounded-lg shadow overflow-hidden" style="aspect-ratio: 16/9; position: relative;">
           <div v-if="broadcastKey" style="width: 100%; height: 100%; overflow: hidden; position: relative;">
             <iframe
+              ref="previewIframeRef"
               :src="previewUrl"
               title="Stage Preview"
               style="
@@ -424,8 +463,24 @@
             </div>
           </div>
         </div>
-        <div class="text-center text-sm text-gray-600 mt-2">
-          Podgląd (aktualizuje się na żywo)
+        <div class="mt-3 space-y-2">
+          <div class="text-center text-sm text-gray-600">
+            Podgląd (aktualizuje się na żywo)
+          </div>
+          <div class="flex items-center justify-center gap-2">
+            <input
+              id="show-preview-bg"
+              v-model="showPreviewBackground"
+              type="checkbox"
+              class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <label for="show-preview-bg" class="text-sm text-gray-700">
+              Pokaż tło parkietu w podglądzie
+            </label>
+          </div>
+          <div class="text-xs text-gray-500 text-center">
+            💡 "PODGLĄD" i "Podgląd na żywo" renderują grafikę w ramce powyżej (iframe stage/channel)
+          </div>
         </div>
       </div>
     </div>
@@ -446,6 +501,8 @@ const channelId = ref<string>('')
 const broadcastKey = ref<string>('')
 const selectedGraphic = ref<string>('team-shotchart')
 const speed = ref(2.0)
+const overlayOpacity = ref(0.7)
+const showPreviewBackground = ref(true)
 
 // League and games
 const selectedLeague = ref<any>(null)
@@ -469,6 +526,7 @@ const gamePickerRef = ref<HTMLElement | null>(null)
 
 // Preview scaling
 const previewContainerRef = ref<HTMLElement | null>(null)
+const previewIframeRef = ref<HTMLIFrameElement | null>(null)
 const previewScale = ref(0.5) // Default scale
 
 const updatePreviewScale = () => {
@@ -539,7 +597,8 @@ function initWebSocket() {
 
 const previewUrl = computed(() => {
   if (!channelId.value || !broadcastKey.value) return ''
-  return `/stage/${channelId.value}?key=${broadcastKey.value}&preview=true`
+  const bgParam = showPreviewBackground.value ? '&showbg=true' : ''
+  return `/stage/${channelId.value}?key=${broadcastKey.value}&preview=true${bgParam}`
 })
 
 const stageUrl = computed(() => {
@@ -555,6 +614,8 @@ const canShow = computed(() => {
     return hasOutput && selectedGame.value && team.value && shotchartTitle.value.trim()
   } else if (selectedGraphic.value === 'player-shotchart') {
     return hasOutput && selectedGame.value && selectedPlayer.value && shotchartTitle.value.trim()
+  } else if (selectedGraphic.value === 'table-horizontal') {
+    return hasOutput && selectedLeague.value
   }
   return false
 })
@@ -579,16 +640,13 @@ function handleWebSocketMessage(data: any) {
   }
 }
 
-function handleShow() {
-  if (!canShow.value || !wsConnection || isBusy.value) return
-
-  isBusy.value = true
-
+function buildCommand() {
   const command: any = {
     action: 'show',
     graphic: selectedGraphic.value,
     speed: speed.value,
-    title: shotchartTitle.value
+    title: shotchartTitle.value,
+    overlay_opacity: overlayOpacity.value
   }
 
   if (selectedGraphic.value === 'team-shotchart') {
@@ -600,7 +658,36 @@ function handleShow() {
     command.shirt_number = parseInt(selectedPlayer.value.shirt_number)
     command.team = selectedPlayer.value.team_name === gameData.value?.home_team?.name ? 'home' : 'away'
     command.show_advertising = showAdvertising.value
+  } else if (selectedGraphic.value === 'table-horizontal') {
+    command.league = selectedLeague.value.id
   }
+
+  return command
+}
+
+function handlePreview() {
+  if (!canShow.value || isBusy.value || !previewIframeRef.value) return
+
+  isBusy.value = true
+  const command = buildCommand()
+
+  // Send command directly to preview iframe via postMessage
+  previewIframeRef.value.contentWindow?.postMessage({
+    type: 'preview_command',
+    command
+  }, '*')
+
+  // Re-enable after short delay
+  setTimeout(() => {
+    isBusy.value = false
+  }, 1000)
+}
+
+function handleShow() {
+  if (!canShow.value || !wsConnection || isBusy.value) return
+
+  isBusy.value = true
+  const command = buildCommand()
 
   wsConnection.send(command)
 
@@ -652,23 +739,55 @@ const fetchGames = async (silent = false) => {
   try {
     const games = await $fetch(`${apiBase}/api/v1/games/latest?games_number=64&league_id=${selectedLeague.value.id}`)
     const previousGameId = selectedGame.value?.game_id
-    availableGames.value = games || []
 
-    // Auto-select first game if none selected or previous game no longer in list
+    // Sort games: in_progress first, then by date desc
+    const sortedGames = (games || []).sort((a, b) => {
+      // In progress games come first
+      if (a.in_progress && !b.in_progress) return -1
+      if (!a.in_progress && b.in_progress) return 1
+
+      // Then sort by date descending
+      return new Date(b.date).getTime() - new Date(a.date).getTime()
+    })
+
+    // For silent refresh, update without causing flicker
+    if (silent && previousGameId) {
+      const updatedGame = sortedGames.find(g => g.game_id === previousGameId)
+      if (updatedGame) {
+        // Update the selected game first to avoid flicker
+        selectedGame.value = updatedGame
+      }
+    }
+
+    availableGames.value = sortedGames
+
+    // Try to restore saved game from localStorage
+    const savedGameId = localStorage.getItem(`selected_game_${selectedLeague.value.id}`)
+
+    // Auto-select logic
     if (availableGames.value.length > 0) {
-      if (!selectedGame.value || !availableGames.value.find(g => g.game_id === previousGameId)) {
-        selectedGame.value = availableGames.value[0]
-      } else {
-        // Update selected game data if it exists (to refresh in_progress status and comment)
-        const updatedGame = availableGames.value.find(g => g.game_id === previousGameId)
-        if (updatedGame) {
-          selectedGame.value = updatedGame
+      if (!selectedGame.value) {
+        // Try to restore saved game
+        if (savedGameId) {
+          const savedGame = availableGames.value.find(g => g.game_id.toString() === savedGameId)
+          if (savedGame) {
+            selectedGame.value = savedGame
+          } else {
+            selectedGame.value = availableGames.value[0]
+          }
+        } else {
+          selectedGame.value = availableGames.value[0]
         }
+      } else if (!availableGames.value.find(g => g.game_id === previousGameId)) {
+        // Previous game no longer in list
+        selectedGame.value = availableGames.value[0]
       }
     }
   } catch (error) {
     console.error('[Panel] Failed to fetch games:', error)
-    availableGames.value = []
+    if (!silent) {
+      availableGames.value = []
+    }
   } finally {
     if (!silent) {
       loadingGames.value = false
@@ -677,20 +796,35 @@ const fetchGames = async (silent = false) => {
 }
 
 // Fetch game details when game is selected
-const fetchGameDetails = async () => {
+const fetchGameDetails = async (silent = false) => {
   if (!selectedGame.value) {
     gameData.value = null
     return
   }
 
-  loadingGame.value = true
+  if (!silent) {
+    loadingGame.value = true
+  }
+
   try {
-    gameData.value = await $fetch(`${apiBase}/api/v1/games/${selectedGame.value.game_id}?with_streak=true`)
+    const newGameData = await $fetch(`${apiBase}/api/v1/games/${selectedGame.value.game_id}?with_streak=true`)
+
+    // For silent refresh, only update if data structure is the same to avoid flicker
+    if (silent && gameData.value) {
+      // Merge new data into existing structure to maintain references
+      Object.assign(gameData.value, newGameData)
+    } else {
+      gameData.value = newGameData
+    }
   } catch (error) {
     console.error('[Panel] Failed to fetch game details:', error)
-    gameData.value = null
+    if (!silent) {
+      gameData.value = null
+    }
   } finally {
-    loadingGame.value = false
+    if (!silent) {
+      loadingGame.value = false
+    }
   }
 }
 
@@ -711,9 +845,25 @@ watch(broadcastKey, async (newKey) => {
   updatePreviewScale()
 })
 
+// Save preview background preference
+watch(showPreviewBackground, (newValue) => {
+  localStorage.setItem('show_preview_background', newValue.toString())
+})
+
+// Save overlay opacity preference
+watch(overlayOpacity, (newValue) => {
+  localStorage.setItem('overlay_opacity', newValue.toString())
+})
+
 // Fetch games when league changes
-watch(selectedLeague, () => {
+watch(selectedLeague, (newLeague) => {
   showGamePicker.value = false
+
+  // Save selected league to localStorage
+  if (newLeague) {
+    localStorage.setItem('selected_league_id', newLeague.id)
+  }
+
   fetchGames()
 })
 
@@ -726,7 +876,7 @@ const startGamesRefresh = () => {
   }
   gamesRefreshInterval = setInterval(() => {
     fetchGames(true) // Silent refresh
-  }, 30000) // 30 seconds
+  }, 5000) // 5 seconds
 }
 
 const stopGamesRefresh = () => {
@@ -737,8 +887,18 @@ const stopGamesRefresh = () => {
 }
 
 // Fetch game details when game changes
-watch(selectedGame, () => {
-  fetchGameDetails()
+watch(selectedGame, (newGame, oldGame) => {
+  if (!newGame) return
+
+  // Save selected game to localStorage
+  if (selectedLeague.value) {
+    localStorage.setItem(`selected_game_${selectedLeague.value.id}`, newGame.game_id.toString())
+  }
+
+  // If game_id changed, fetch details (not silent)
+  // If same game_id, it's a refresh - fetch silently to avoid flicker
+  const isSameGame = oldGame?.game_id === newGame.game_id
+  fetchGameDetails(isSameGame)
 })
 
 // Close game picker when clicking outside
@@ -804,8 +964,26 @@ onMounted(async () => {
       broadcastKey.value = savedKey
     }
 
-    // Set default league to PLK
-    selectedLeague.value = leagues[0]
+    // Restore league from localStorage or default to PLK
+    const savedLeagueId = localStorage.getItem('selected_league_id')
+    if (savedLeagueId) {
+      const savedLeague = leagues.find(l => l.id === savedLeagueId)
+      selectedLeague.value = savedLeague || leagues[0]
+    } else {
+      selectedLeague.value = leagues[0]
+    }
+
+    // Restore preview background preference
+    const savedShowBg = localStorage.getItem('show_preview_background')
+    if (savedShowBg !== null) {
+      showPreviewBackground.value = savedShowBg === 'true'
+    }
+
+    // Restore overlay opacity preference
+    const savedOpacity = localStorage.getItem('overlay_opacity')
+    if (savedOpacity !== null) {
+      overlayOpacity.value = parseFloat(savedOpacity)
+    }
 
     // Start games refresh interval
     startGamesRefresh()
